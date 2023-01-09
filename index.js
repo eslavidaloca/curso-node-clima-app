@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-d
 import express from 'express'
 
 import {
-    inquirerMenu, pausa, leerInput
+    inquirerMenu, pausa, leerInput, listarLugares
 } from './helpers/inquirer.js';
 import { Busquedas } from './models/busquedas.js';
 
@@ -16,17 +16,17 @@ const main = async() => {
 
         switch(opt){
             case 1: //Escribir ciudad
-                const lugar = await leerInput('Ciudad: ');
-                await busquedas.ciudad(lugar);
+                const placeSearched = await leerInput('Ciudad: ');
+                const places = await busquedas.ciudad(placeSearched);
+                const id = await listarLugares(places);
+                const placeSel = places.find(l => l.id === id);
                 
-                //Buscar los lugares
-                //Seleccionar el lugar
                 //Clima
                 //Mostrar resultados
                 console.log(`\nInformacion de la ciudad\n`.cyan);
-                console.log(`Ciudad:`, );
-                console.log(`Lat:`, );
-                console.log(`Lng:`, );
+                console.log(`Ciudad:`, placeSel.nombre);
+                console.log(`Lat:`, placeSel.lat);
+                console.log(`Lng:`, placeSel.lng);
                 console.log(`Temperatura:`, );
                 console.log(`Minima:`, );
                 console.log(`Maxima:`, );
