@@ -1,7 +1,6 @@
 import inquirer from 'inquirer';
 import colors from 'colors';
 
-
 const inquirerMenu = async() => {
     const preguntas = [
         {

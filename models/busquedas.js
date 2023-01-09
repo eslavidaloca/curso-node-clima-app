@@ -1,11 +1,14 @@
+import fs from 'fs';
+
 import axios from 'axios';
-import { pausa } from '../helpers/inquirer.js';
+import colors from 'colors';
 
 export class Busquedas {
-    historial = ['Houston','Grecia','Texas'];
+    historial = [];
+    dbPath = './db/database.json';
 
     constructor() {
-        //TODO: Leer db si existe
+        this.leerDB();
     }
 
     get paramsMapBox() {
@@ -14,6 +17,15 @@ export class Busquedas {
             'language': 'es,en',
             'limit': 5
         }
+    }
+
+    get historialCapitalizado(){
+        return this.historial.map(lugar =>{
+            let palabras = lugar.split(' ');
+            palabras = palabras.map(p => p[0].toUpperCase() + p.substring(1));
+
+            return palabras.join(' ');
+        });
     }
 
     async ciudad(lugar = '') {
@@ -28,14 +40,65 @@ export class Busquedas {
             return resp.data.features.map(lugar => ({
                 id: lugar.id,
                 nombre: lugar.place_name,
-                lng: lugar.center[0],
+                lon: lugar.center[0],
                 lat: lugar.center[1]
             }));
 
         } catch(error) {
             return [];
         }
-        
-        
+    }
+    
+    get paramsOpenWeather() {
+        return {
+            'appid': process.env.OPENWEATHER_KEY,
+            'lang': 'es',
+            'units': 'metric'
+        }
+    }
+
+    async climaLugar(lat, lon){
+        try {
+            const instance = axios.create({
+                baseURL: `https://api.openweathermap.org/data/2.5/weather`,
+                timeout: 2000,
+                params: {...this.paramsOpenWeather, lat, lon} //desestructuracion
+            });
+            const resp = await instance.get();
+            const {weather, main} = resp.data; //desestructuracion
+            return {
+                desc: weather[0].description,
+                temp: main.temp,
+                temp_min: main.temp_min,
+                temp_max: main.temp_max
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    agregarHistorial(lugar = ''){
+
+        if(this.historial.includes(lugar.toLowerCase())){
+            return;
+        }
+        this.historial = this.historial.splice(0, 4);
+
+        this.historial.unshift(lugar.toLowerCase());
+        this.guardarDB();
+    }
+
+    guardarDB(){
+        const payload = {
+            historial: this.historial
+        };
+        fs.writeFileSync(this.dbPath, JSON.stringify(payload));
+    }
+
+    leerDB(){
+        if(!fs.existsSync(this.dbPath)) return null;
+        const info = fs.readFileSync(this.dbPath,{encoding: 'utf-8'});
+        const data = JSON.parse(info);
+        this.historial = data.historial;
     }
 }
